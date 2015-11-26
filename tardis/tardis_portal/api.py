@@ -60,6 +60,14 @@ from tastypie.serializers import Serializer
 from tastypie.utils import trailing_slash
 from tastypie.contrib.contenttypes.fields import GenericForeignKeyField
 
+parameter_meta_filtering = {
+    'name': ALL_WITH_RELATIONS,
+    'string_value': ('exact', 'iexact', 'contains', 'regex'),
+    'numerical_value': ('exact', 'range', 'lt', 'lte', 'gte', 'gt'),
+    'datetime_value': ('exact', 'range', 'lt', 'lte', 'gte', 'gt',
+                       'year', 'month', 'day', 'hour', 'minute', 'second'),
+    'link_id': ('exact',),
+}
 
 class PrettyJSONSerializer(Serializer):
     json_indent = 2
@@ -624,6 +632,7 @@ class ExperimentParameterResource(ParameterResource):
 
     class Meta(ParameterResource.Meta):
         queryset = ExperimentParameter.objects.all()
+        filtering = parameter_meta_filtering
 
 
 class ExperimentResource(MyTardisModelResource):
@@ -738,6 +747,7 @@ class DatasetParameterResource(ParameterResource):
 
     class Meta(ParameterResource.Meta):
         queryset = DatasetParameter.objects.all()
+        filtering = parameter_meta_filtering
 
 
 class StorageBoxResource(MyTardisModelResource):
@@ -833,9 +843,31 @@ class DatasetResource(MyTardisModelResource):
         }
         always_return_data = True
 
+        # for tastypie_swagger
+        extra_actions = [
+            {
+                "name": "files",
+                "http_method": "GET",
+                "resource_type": "view",
+                "description": "Get datafiles for a given dataset",
+                # tastypie_swagger seems to be add these as a query parameter
+                # rather than to the URL path. file_path doesn't work that
+                # way, so it's not included in the Swagger auto-documentation
+                # "fields": {
+                #     "file_path": {
+                #         "type": "string",
+                #         "required": False,
+                #         "description": "/some/path/to/datafile.txt"
+                #     }
+                # }
+            }
+        ]
+
     def prepend_urls(self):
         return [
-            url(r'^(?P<resource_name>%s)/(?P<pk>\w[\w/-]*)/files/'
+            url(r'^(?P<resource_name>%s)/'
+                r'(?P<pk>\w[\w/-]*)/'
+                r'/files/'
                 r'(?:(?P<file_path>.+))?$' % self._meta.resource_name,
                 self.wrap_view('get_datafiles'),
                 name='api_get_datafiles_for_dataset'),
@@ -848,9 +880,7 @@ class DatasetResource(MyTardisModelResource):
         datafiles = DataFile.objects.filter(dataset__id=dataset_id)
         auth_bundle = self.build_bundle(request=request)
         auth_bundle.obj = DataFile()
-        self.authorized_read_list(
-            datafiles, auth_bundle
-            )
+        self.authorized_read_list(datafiles, auth_bundle)
         del kwargs['pk']
         del kwargs['file_path']
         kwargs['dataset__id'] = dataset_id
@@ -882,6 +912,22 @@ class DataFileResource(MyTardisModelResource):
             'filename': ('exact', ),
         }
         resource_name = 'dataset_file'
+
+        # for tastypie_swagger
+        extra_actions = [
+            {
+                "name": "download",
+                "http_method": "GET",
+                "resource_type": "view",
+                "description": "Download datafile",
+            },
+            {
+                "name": "verify",
+                "http_method": "GET",
+                "resource_type": "view",
+                "description": "Trigger verification (checksum) of datafile",
+            }
+        ]
 
     def download_file(self, request, **kwargs):
         '''
@@ -973,10 +1019,14 @@ class DataFileResource(MyTardisModelResource):
 
     def prepend_urls(self):
         return [
-            url(r"^(?P<resource_name>%s)/(?P<pk>\w[\w/-]*)/download%s$" %
+            url(r"^(?P<resource_name>%s)/"
+                r"(?P<pk>\w[\w/-]*)/"
+                r"download%s$" %
                 (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('download_file'), name="api_download_file"),
-            url(r"^(?P<resource_name>%s)/(?P<pk>\w[\w/-]*)/verify%s$" %
+            url(r"^(?P<resource_name>%s)/"
+                r"(?P<pk>\w[\w/-]*)/"
+                r"verify%s$" %
                 (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('verify_file'), name="api_verify_file"),
         ]
@@ -1030,6 +1080,7 @@ class DatafileParameterResource(ParameterResource):
 
     class Meta(ParameterResource.Meta):
         queryset = DatafileParameter.objects.all()
+        filtering = parameter_meta_filtering
 
 
 class LocationResource(MyTardisModelResource):
