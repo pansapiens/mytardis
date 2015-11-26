@@ -60,14 +60,6 @@ from tastypie.serializers import Serializer
 from tastypie.utils import trailing_slash
 from tastypie.contrib.contenttypes.fields import GenericForeignKeyField
 
-parameter_meta_filtering = {
-    'name': ALL_WITH_RELATIONS,
-    'string_value': ('exact', 'iexact', 'contains', 'regex'),
-    'numerical_value': ('exact', 'range', 'lt', 'lte', 'gte', 'gt'),
-    'datetime_value': ('exact', 'range', 'lt', 'lte', 'gte', 'gt',
-                       'year', 'month', 'day', 'hour', 'minute', 'second'),
-    'link_id': ('exact',),
-}
 
 class PrettyJSONSerializer(Serializer):
     json_indent = 2
@@ -567,11 +559,29 @@ class ParameterNameResource(MyTardisModelResource):
 
     class Meta(MyTardisModelResource.Meta):
         queryset = ParameterName.objects.all()
+        filtering = {
+            'name': ('exact', 'iexact', 'contains', 'regex'),
+            'full_name': ('exact', 'iexact', 'contains', 'regex'),
+            'units': ('exact', 'iexact', 'contains', 'regex'),
+            'schema': ALL_WITH_RELATIONS,
+            'data_type': ('exact',),
+        }
 
 
 class ParameterResource(MyTardisModelResource):
     name = fields.ForeignKey(ParameterNameResource, 'name')
     value = fields.CharField(blank=True)
+
+    class Meta(MyTardisModelResource.Meta):
+        filtering = {
+            'name': ALL_WITH_RELATIONS,
+            'string_value': ('exact', 'iexact', 'contains', 'regex'),
+            'numerical_value': ('exact', 'range', 'lt', 'lte', 'gte', 'gt'),
+            'datetime_value': ('exact', 'range', 'lt', 'lte', 'gte', 'gt',
+                               'year', 'month', 'day', 'hour', 'minute',
+                               'second'),
+            'link_id': ('exact',),
+        }
 
     def hydrate(self, bundle):
         '''
@@ -632,7 +642,6 @@ class ExperimentParameterResource(ParameterResource):
 
     class Meta(ParameterResource.Meta):
         queryset = ExperimentParameter.objects.all()
-        filtering = parameter_meta_filtering
 
 
 class ExperimentResource(MyTardisModelResource):
@@ -747,7 +756,6 @@ class DatasetParameterResource(ParameterResource):
 
     class Meta(ParameterResource.Meta):
         queryset = DatasetParameter.objects.all()
-        filtering = parameter_meta_filtering
 
 
 class StorageBoxResource(MyTardisModelResource):
@@ -1080,7 +1088,6 @@ class DatafileParameterResource(ParameterResource):
 
     class Meta(ParameterResource.Meta):
         queryset = DatafileParameter.objects.all()
-        filtering = parameter_meta_filtering
 
 
 class LocationResource(MyTardisModelResource):
