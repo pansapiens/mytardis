@@ -552,6 +552,12 @@ class SchemaResource(MyTardisModelResource):
 
     class Meta(MyTardisModelResource.Meta):
         queryset = Schema.objects.all()
+        filtering = {
+            'name': ('exact', 'iexact', 'contains', 'icontains', 'regex'),
+            'namespace': ('exact', 'iexact', 'contains', 'icontains', 'regex'),
+            'subtype': ('exact', 'iexact', 'contains', 'icontains', 'regex'),
+            'type': ('exact',),
+        }
 
 
 class ParameterNameResource(MyTardisModelResource):
@@ -560,9 +566,9 @@ class ParameterNameResource(MyTardisModelResource):
     class Meta(MyTardisModelResource.Meta):
         queryset = ParameterName.objects.all()
         filtering = {
-            'name': ('exact', 'iexact', 'contains', 'regex'),
-            'full_name': ('exact', 'iexact', 'contains', 'regex'),
-            'units': ('exact', 'iexact', 'contains', 'regex'),
+            'name': ('exact', 'iexact', 'contains', 'icontains', 'regex'),
+            'full_name': ('exact', 'iexact', 'contains', 'icontains', 'regex'),
+            'units': ('exact', 'iexact', 'contains', 'icontains', 'regex'),
             'schema': ALL_WITH_RELATIONS,
             'data_type': ('exact',),
         }
@@ -575,7 +581,9 @@ class ParameterResource(MyTardisModelResource):
     class Meta(MyTardisModelResource.Meta):
         filtering = {
             'name': ALL_WITH_RELATIONS,
-            'string_value': ('exact', 'iexact', 'contains', 'regex'),
+            'string_value': ('exact', 'iexact',
+                             'contains', 'icontains',
+                             'regex'),
             'numerical_value': ('exact', 'range', 'lt', 'lte', 'gte', 'gt'),
             'datetime_value': ('exact', 'range', 'lt', 'lte', 'gte', 'gt',
                                'year', 'month', 'day', 'hour', 'minute',
@@ -663,6 +671,12 @@ class ExperimentResource(MyTardisModelResource):
         filtering = {
             'id': ('exact', ),
             'title': ('exact',),
+            'created_time': ('exact', 'range', 'lt', 'lte', 'gte', 'gt',
+                             'year', 'month', 'day', 'hour', 'minute',
+                             'second'),
+            'end_time': ('exact', 'range', 'lt', 'lte', 'gte', 'gt',
+                         'year', 'month', 'day', 'hour', 'minute',
+                         'second'),
         }
         always_return_data = True
 
@@ -808,7 +822,7 @@ class FacilityResource(MyTardisModelResource):
         filtering = {
             'id': ('exact', ),
             'manager_group': ALL_WITH_RELATIONS,
-            'name': ('exact', ),
+            'name': ('exact', 'iexact', 'contains', 'icontains', 'regex'),
         }
         always_return_data = True
 
@@ -822,7 +836,7 @@ class InstrumentResource(MyTardisModelResource):
         filtering = {
             'id': ('exact', ),
             'facility': ALL_WITH_RELATIONS,
-            'name': ('exact', ),
+            'name': ('exact', 'iexact', 'contains', 'icontains', 'regex'),
         }
         always_return_data = True
 
@@ -848,6 +862,7 @@ class DatasetResource(MyTardisModelResource):
             'experiments': ALL_WITH_RELATIONS,
             'description': ('exact', ),
             'directory': ('exact', ),
+            'instrument': ALL_WITH_RELATIONS,
         }
         always_return_data = True
 
@@ -868,7 +883,7 @@ class DatasetResource(MyTardisModelResource):
                 #         "description": "/some/path/to/datafile.txt"
                 #     }
                 # }
-            }
+            },
         ]
 
     def prepend_urls(self):
