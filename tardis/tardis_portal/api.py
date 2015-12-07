@@ -642,6 +642,10 @@ class ExperimentParameterSetResource(ParameterSetResource):
 
     class Meta(ParameterSetResource.Meta):
         queryset = ExperimentParameterSet.objects.all()
+        filtering = {
+            'id': ('exact', ),
+            'experiment': ALL_WITH_RELATIONS,
+        }
 
 
 class ExperimentParameterResource(ParameterResource):
@@ -762,6 +766,10 @@ class DatasetParameterSetResource(ParameterSetResource):
 
     class Meta(ParameterSetResource.Meta):
         queryset = DatasetParameterSet.objects.all()
+        filtering = {
+            'id': ('exact', ),
+            'dataset': ALL_WITH_RELATIONS,
+        }
 
 
 class DatasetParameterResource(ParameterResource):
@@ -1095,6 +1103,10 @@ class DatafileParameterSetResource(ParameterSetResource):
 
     class Meta(ParameterSetResource.Meta):
         queryset = DatafileParameterSet.objects.all()
+        filtering = {
+            'id': ('exact', ),
+            'datafile': ALL_WITH_RELATIONS,
+        }
 
 
 class DatafileParameterResource(ParameterResource):
@@ -1159,6 +1171,7 @@ class ObjectACLResource(MyTardisModelResource):
         filtering = {
             'pluginId': ('exact', ),
             'entityId': ('exact', ),
+            'object_id': ('exact', ),
         }
 
     def hydrate(self, bundle):
