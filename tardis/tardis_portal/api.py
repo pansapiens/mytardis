@@ -1172,6 +1172,7 @@ class ObjectACLResource(MyTardisModelResource):
             'pluginId': ('exact', ),
             'entityId': ('exact', ),
             'object_id': ('exact', ),
+            'content_type': ('exact', ),
         }
 
     def hydrate(self, bundle):
