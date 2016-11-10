@@ -478,7 +478,7 @@ class DataFileObject(models.Model):
     def _current_values(self):
         return model_to_dict(self, fields=[
             field.name for field in self._meta.fields
-            if field.name not in ['verified', 'last_verified_time']])
+            if field.name not in ['id', 'verified', 'last_verified_time']])
 
     @property
     def _changed(self):
@@ -494,11 +494,14 @@ class DataFileObject(models.Model):
     def save(self, *args, **kwargs):
         reverify = kwargs.pop('reverify', False)
         super(DataFileObject, self).save(*args, **kwargs)
+
+        changed = False
         if self._changed:
+            changed = True
             self._initial_values = self._current_values
-        elif not reverify:
-            return
-        tasks.dfo_verify.apply_async(countdown=5, args=[self.id])
+
+        if changed or reverify or not self.verified:
+            tasks.dfo_verify.apply_async(countdown=5, args=[self.id])
 
     @property
     def storage_type(self):
@@ -643,7 +646,13 @@ class DataFileObject(models.Model):
             self.delete()
         return copy
 
-    def verify(self, add_checksums=True, add_size=True):  # too complex # noqa
+    def verify(self, add_checksums=True, add_size=True):
+        verify = getattr(self._storage, 'verify', self._default_verify)
+        return verify(self, add_checksums=add_checksums, add_size=add_size)
+
+    def _default_verify(self, add_checksums=True,
+                        add_size=True):  # too complex # noqa
+
         comparisons = ['size', 'md5sum', 'sha512sum']
 
         df = self.datafile
