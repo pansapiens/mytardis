@@ -647,10 +647,24 @@ class DataFileObject(models.Model):
         return copy
 
     def verify(self, add_checksums=True, add_size=True):
-        verify = getattr(self._storage, 'verify', self._default_verify)
-        return verify(self, add_checksums=add_checksums, add_size=add_size)
+        _storagebox_verify = getattr(self._storage, 'verify', None)
+        if _storagebox_verify:
+            # TODO: Instead of implementing 'verify' on the StorageBox,
+            #       we should probably implement checksums(alg=['md5', 'sha512'])
+            #       that returns the requested checksums and do the comparison
+            #       in _default_verify as usual. This keeps all the checksum
+            #       comparison code in one place and avoids passing in a DataFile
+            #       object to the StorageBox, which would ideally be independent of
+            #       MyTardis.
+            return _storagebox_verify(self.datafile,
+                                      add_checksums=add_checksums,
+                                      add_size=add_size)
 
-    def _default_verify(self, add_checksums=True,
+        return self._default_verify(add_checksums=add_checksums,
+                                    add_size=add_size)
+
+    def _default_verify(self,
+                        add_checksums=True,
                         add_size=True):  # too complex # noqa
 
         comparisons = ['size', 'md5sum', 'sha512sum']
